@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2023-10-26T23:38:43+02:00",
+  "id": "BRSProyecto1.2",
+  "duration": 32,
+  "title": "Guía para realizar un bastionado del arranque en Debian 12",
+  "summary": "Guía para realizar un proceso de hardening o aseguramiento de un arranque debian",
+  "source": "Arranque seguro debian.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "codelab",
+    "markdown"
+  ],
+  "tags": [
+    "web"
+  ],
+  "feedback": "https://github.com/cromeoli/BRS_Proyecto1/issues",
+  "ga": "ID de Google Analytics",
+  "url": "BRSProyecto1.2"
+}

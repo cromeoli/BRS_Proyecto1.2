@@ -1,0 +1,133 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Guía para realizar un bastionado del arranque en Debian 12</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab codelab-gaid="ID de Google Analytics"
+                  id="BRSProyecto1.2"
+                  title="Guía para realizar un bastionado del arranque en Debian 12"
+                  environment="web"
+                  feedback-link="https://github.com/cromeoli/BRS_Proyecto1/issues">
+    
+      <google-codelab-step label="Introducción" duration="0">
+        <p>Un arranque de sistema descuidado en una máquina podría suponernos grandes problemas de seguridad si no nos preocupamos de configurarlo adecuadamente.</p>
+<p>Un atacante avispado podría valerse de desconfiguraciones en por ejemplo el arranque GRUB para saltarse la seguridad que pueda tener nuestra máquina con respecto al inicio de sesión y vulnerar así nuestra seguridad.</p>
+<p>Este documento ofrece una guía paso a paso ilustrada con capturas de pantalla para aplicar un proceso de bastionado o hardening de una máquina con Debian 12.</p>
+<p>En las siguientes secciones detallaremos el proceso.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Ocultar GRUB" duration="5">
+        <p>Ocultar el GRUB nos puede ayudar a securizar nuestro sistema ya que desconfiguraciones en el mismo podrían llevarnos a que un atacante vulnere la seguridad del equipo mediante la edición del parámetro <em>Single Init</em> de GRUB</p>
+<p>Para ocultarlo podríamos seguir los siguientes pasos:</p>
+<ol type="1">
+<li>Abrimos una consola y con un editor de texto el fichero de configuración <em>etc/default/grub</em>. El editor de texto que yo he usado es <em>nano</em>. Para ello realizamos los siguientes comandos:<pre><code language="language-bash" class="language-bash">sudo nano /etc/default/grub
+</code></pre>
+Una vez dentro del fichero editamos el párametro &#34;GRUB_TIMEOUT&#34; y lo establecemos en 0:<img alt="Alt text" src="img/3ef88f559d4952a8.png"></li>
+<li>A continuación deberemos ejecutar el comando <code>update grub</code> para compilar el fichero <em>etc/default/grub</em>:<img alt="Alt text" src="img/a056a405e799b44d.png"></li>
+<li>Con estos pasos el grub debería estar deshabilitado, y cuando iniciemos nuestra máquina no debería aparecernos:<img alt="arranque Seguro" src="img/e8386287f73c8e6e.gif"></li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Añadir una contraseña de arranque" duration="5">
+        <p>Ocultar el menú GRUB puede ayudarnos a mejorar nuestra seguridad, sin embargo un usuario avanzado lo bastante avispado es capaz de causarnos problemas con tan solo llegar a la pantalla de identificación de usuario.</p>
+<p>Para ello, añadir una contraseña al arranque del dispositivo podría ayudarnos a evitar que nadie llegue tan lejos sin autorización.</p>
+<p>Lo podemos realizar siguiendo los siguientes pasos:</p>
+<ol type="1">
+<li>Primero de todo procedemos a editar el fichero <em>/etc/grub.d/40_custom</em> y añadimos al final la línea <code>set superusers="root"</code>. En este caso yo voy a editarlo con <em>Vim</em>:<img alt="Alt text" src="img/31eac96b51a6b2b4.png">Donde pone <code>passwd root</code> debería ir nuestra contraseña, pero primero vamos a cifrarla, para ello vamos al siguiente paso</li>
+<li>Abrimos otra terminal y ejecutamos el comando siguiente:<pre><code language="language-bash" class="language-bash">sudo grub-mkpasswd-pbkdf2
+</code></pre>
+<img alt="Alt text" src="img/db91e8c0f8aa62b0.png"> Nos dará un hash, que es lo que ingresaremos en el campo anterior</li>
+<li>Volvemos a la edición del archivo y añadimos la contraseña mediante el hash:<img alt="Alt text" src="img/1535c8985be05eb8.png">Guardamos el archivo.</li>
+<li>En este punto debemos realizar un <code>update grub</code> para volver a compilar los archivos de configuración de grub</li>
+<li>Y probamos a iniciar la máquina de nuevo. Nos debería de pedir una contraseña:</li>
+</ol>
+<p class="image-container"><img alt="user" src="img/27d02bc5a9b1c53e.gif"></p>
+<ol type="1" start="6">
+<li>Es recomendable establecer que el archivo de configuración <em>/etc/grub.d/40_custom</em> solo pueda editarlo el usuario <em>root</em>, para ello añadimos los permisos convenientes con:<pre><code language="language-bash" class="language-bash">sudo chmod 700 /etc/grub.d/40_custom
+</code></pre>
+</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Crear copias de seguridad de la configuración de GRUB" duration="10">
+        <p>La configuración conseguida hasta ahora es un gran avance en la seguridad de nuestro equipo, pero ahora debemos tomar algunas medidas extra para garantizarnos la máxima tranquilidad.</p>
+<p>Vamos a proceder a realizar copias de seguridad de los archivos de configuración.</p>
+<p>Para ello podemos seguir los siguientes pasos:</p>
+<ol type="1">
+<li>Para copiar archivos en un sistema linux, podremos utilizar el comando <code>cp</code>. Sabiendo esto vamos a proceder a copiar los archivos de la configuración del grub al directorio que será la copia de seguridad:<pre><code language="language-bash" class="language-bash">cp /etc/default/grub /home/user/
+</code></pre>
+</li>
+<li>También necesitaremos copiar los archivos de configuración ubicados en <code>grub.d</code>. Este directorio contiene archivos dentro, por lo que deberíamos añadir la flag -R al comando <code>cp</code>.<pre><code language="language-bash" class="language-bash">cp -R /etc/grub.d /home/user
+</code></pre>
+</li>
+<li>Con esto habremos creado copias de seguridad, pero lo conveniente sería subirlas a un repositorio online, nube, dispositivo físico o mejor, todo a la vez, por si alguno de estos falla.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Verificar autenticidad del Kernel en el arranque" duration="10">
+        <p>Como paso adicional para el arranque, vamos a verificar la autenticidad del kernel en el arranque mediante una firma digital. Es decir configurar un <em>Secure Boot</em></p>
+<p>Para ello podemos realizar los siguientes pasos:</p>
+<ol type="1">
+<li>Vamos a instalar las herramientas <code>sbsigntool</code> que utilizaremos para realizar la firma sobre los componentes del arranque. Lo haremos simplemente con:<pre><code language="language-bash" class="language-bash">apt get install sbsigntool
+</code></pre>
+Tambien necesitaremos open SSL para generar las claves, por lo que lo instalaremos si no lo tenemos:<pre><code language="language-bash" class="language-bash">apt get install openssl
+</code></pre>
+</li>
+<li>Ahora vamos a generar un par de claves SSL madiante el siguiente comando:<pre><code language="language-bash" class="language-bash">openssl req -new -x509 -newkey rsa:2048 -keyout clave_privada.key -out clave_publica.crt -nodes -days 3650
+</code></pre>
+<img alt="Alt text" src="img/eb287c20257e46b7.png">Nos pedira una serie de datos a completar:<img alt="Alt text" src="img/c7d352a8f157789d.png">Y podemos ver como se han generado las claves</li>
+</ol>
+<p>Nota: Realmente, este comando lo que hace es generar un certificado que hemos firmado nosotros mismos, por lo que no tiene validez. Necesitaríamos de una entidad certificadora para obtener un certificado válido.</p>
+<ol type="1" start="3">
+<li>Editamos el fichero de configuración de grub <em>etc/default/grub</em> para habilitar el arranque seguro. Lo haremos editando la siguiente línea:<img alt="Alt text" src="img/dfc95e9f49829cb4.png">Deberemos de realizar un <code>update-grub</code> después de este paso.</li>
+<li>Ahora vamos a firmar el kernel con el certificado que acabamos de generar. Para ello tan solo ejecutamos el siguiente comando:<pre><code language="language-bash" class="language-bash">sbsign --key clave_privada.key --cert clave_publica.crt --output /boot/vmlinuz-5.10.0-9-amd64.signed /boot/vmlinuz-5.10.0-9-amd64
+</code></pre>
+<img alt="Alt text" src="img/961e8dd9635d2bb5.png"></li>
+<li>A partir de ahora cuando nuestro equipo arranque verificará la autenticidad del kernel.</li>
+</ol>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Conclusión" duration="2">
+        <p>Con estas medidas ahora el arranque de nuestro Debian 12 es a prueba de ciberdelicuentes. Tendrán que desesperarse un poco antes de conseguir saltarse la seguridad de nuestro equipo.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>
